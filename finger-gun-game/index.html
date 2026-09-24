@@ -21,7 +21,13 @@
     font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   }
   #game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; cursor: none; }
-  #cam { display: none; }
+  /* NOT display:none — browsers (Safari especially) stop decoding frames of hidden videos → black preview */
+  #cam { position: fixed; left: 0; top: 0; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
+  #camSelect {
+    position: fixed; right: 16px; bottom: 204px; width: 240px; z-index: 6; display: none;
+    font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 8px;
+    background: rgba(12,14,28,0.9); color: var(--text); border: 1px solid rgba(255,255,255,0.25);
+  }
   #preview {
     position: fixed; right: 16px; bottom: 16px; width: 240px; height: 180px;
     border-radius: 12px; border: 2px solid rgba(255,255,255,0.25);
@@ -57,6 +63,7 @@
   .tip { margin-top: 12px; font-size: 13px; color: var(--muted); line-height: 1.5; }
   @media (max-width: 600px) {
     #preview { width: 144px; height: 108px; right: 8px; bottom: 8px; }
+    #camSelect { width: 144px; right: 8px; bottom: 122px; }
     h1 { font-size: 26px; }
     .card { padding: 18px; }
   }
@@ -64,7 +71,8 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<video id="cam" playsinline muted></video>
+<video id="cam" playsinline muted autoplay></video>
+<select id="camSelect" title="카메라 선택"></select>
 <canvas id="preview" width="320" height="240"></canvas>
 
 <div id="overlay">
@@ -373,42 +381,139 @@ function processHands(result, t) {
   }
 }
 
+function landmarkerOptions(delegate) {
+  return {
+    baseOptions: { modelAssetPath: MODEL_URL, delegate },
+    runningMode: "VIDEO", numHands: 2,
+    minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5,
+  };
+}
+
 async function initCamera() {
   btnCam.disabled = true; btnMouse.disabled = true;
   statusEl.textContent = "손 인식 모델 불러오는 중... (첫 로딩은 조금 걸려요 ☕)";
   try {
-    const vision = await import(`${MP_BASE}/vision_bundle.mjs`);
-    const fileset = await vision.FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
-    const opts = (delegate) => ({
-      baseOptions: { modelAssetPath: MODEL_URL, delegate },
-      runningMode: "VIDEO", numHands: 2,
-      minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5,
-    });
-    try { handLandmarker = await vision.HandLandmarker.createFromOptions(fileset, opts("GPU")); }
-    catch { handLandmarker = await vision.HandLandmarker.createFromOptions(fileset, opts("CPU")); }
+    const vision = visionLib = await import(`${MP_BASE}/vision_bundle.mjs`);
+    const fileset = visionFiles = await vision.FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
+    try { handLandmarker = await vision.HandLandmarker.createFromOptions(fileset, landmarkerOptions("GPU")); }
+    catch { usingCpu = true; handLandmarker = await vision.HandLandmarker.createFromOptions(fileset, landmarkerOptions("CPU")); }
 
     statusEl.textContent = "카메라 켜는 중... 권한 허용 버튼을 눌러주세요 🙏";
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: "user" }, audio: false });
-    video.srcObject = stream;
-    await video.play();
+    await openCamera(safeGet("fg_cam", ""));
+    await fillCameraList();
     input.mode = "camera";
     preview.style.display = "block";
+    camSelect.style.display = "block";
     startGame();
   } catch (err) {
     console.error(err);
-    statusEl.textContent = "😵 카메라/모델 준비 실패: " + (err && err.message ? err.message : err) +
-      " — https 또는 localhost 에서 열었는지, 카메라 권한을 허용했는지 확인해주세요. 일단 마우스 모드로 놀 수 있어요!";
+    const name = err && err.name;
+    let why = "https 또는 localhost 에서 열었는지 확인해주세요.";
+    if (name === "NotAllowedError") why = "카메라 권한이 거부됐어요. 주소창 옆 🔒/카메라 아이콘에서 허용해주세요. (Mac이면 시스템 설정 → 개인정보 보호 → 카메라에서 브라우저도 켜야 해요)";
+    else if (name === "NotReadableError") why = "다른 앱(Zoom, 카톡, 다른 탭 등)이 카메라를 쓰고 있는 것 같아요. 끄고 다시 시도해주세요.";
+    else if (name === "NotFoundError" || name === "OverconstrainedError") why = "카메라를 못 찾았어요. 연결을 확인해주세요.";
+    else if (!window.isSecureContext) why = "파일을 직접 열면 카메라가 막혀요. go run . 으로 띄운 http://localhost:8080 으로 접속해주세요.";
+    statusEl.textContent = "😵 카메라/모델 준비 실패 (" + (err && err.message ? err.message : err) + ") — " + why + " 일단 마우스 모드로 놀 수 있어요!";
     btnCam.disabled = false; btnMouse.disabled = false;
   }
 }
 
-function trackFrame() {
-  if (input.mode !== "camera" || !handLandmarker || video.readyState < 2) return;
-  if (video.currentTime === lastVideoTime) return;
-  lastVideoTime = video.currentTime;
-  const t = performance.now();
-  const res = handLandmarker.detectForVideo(video, t);
-  processHands(res, t);
+const camSelect = document.getElementById("camSelect");
+let visionLib = null, visionFiles = null, usingCpu = false;
+
+async function openCamera(deviceId) {
+  if (video.srcObject) video.srcObject.getTracks().forEach((tr) => tr.stop());
+  const video_ = deviceId
+    ? { deviceId: { exact: deviceId }, width: { ideal: 640 }, height: { ideal: 480 } }
+    : { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } };
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ video: video_, audio: false }); }
+  catch (e) {
+    if (!deviceId) throw e;
+    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); // saved camera vanished
+  }
+  video.srcObject = stream;
+  if (video.readyState < 1) await new Promise((res) => video.addEventListener("loadedmetadata", res, { once: true }));
+  await video.play();
+  lastVideoTime = -1;
+  camHealth.blackSince = 0; camHealth.warned = false;
+  const tr = stream.getVideoTracks()[0];
+  if (tr) {
+    tr.addEventListener("ended", () => toast("📷 카메라 연결이 끊겼어요. 오른쪽 아래에서 다시 골라주세요", "#ff9f43"));
+    const id = tr.getSettings && tr.getSettings().deviceId;
+    if (id) safeSet("fg_cam", id);
+  }
+}
+
+async function fillCameraList() {
+  try {
+    const cams = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "videoinput");
+    const current = video.srcObject && video.srcObject.getVideoTracks()[0];
+    const currentId = current && current.getSettings ? current.getSettings().deviceId : "";
+    camSelect.innerHTML = "";
+    cams.forEach((d, i) => {
+      const o = document.createElement("option");
+      o.value = d.deviceId; o.textContent = "📷 " + (d.label || `카메라 ${i + 1}`);
+      if (d.deviceId === currentId) o.selected = true;
+      camSelect.appendChild(o);
+    });
+  } catch { /* no picker, no problem */ }
+}
+camSelect.addEventListener("change", async () => {
+  try { await openCamera(camSelect.value); toast("📷 카메라 변경!", "#9fd3ff"); }
+  catch (e) { toast("😵 그 카메라는 못 열었어요: " + (e.message || e), "#ff4d5e"); }
+});
+
+// Is the camera actually giving us a picture? Sample a tiny copy of the frame twice a second.
+const camHealth = { lastCheck: 0, blackSince: 0, warned: false, problem: "" };
+const probe = document.createElement("canvas"); probe.width = 16; probe.height = 12;
+const probeCtx = probe.getContext("2d", { willReadFrequently: true });
+function checkCamera(now) {
+  if (now - camHealth.lastCheck < 500) return;
+  camHealth.lastCheck = now;
+  let problem = "";
+  if (!video.srcObject || video.readyState < 2 || !video.videoWidth) problem = "신호 없음";
+  else {
+    probeCtx.drawImage(video, 0, 0, 16, 12);
+    const d = probeCtx.getImageData(0, 0, 16, 12).data;
+    let sum = 0;
+    for (let i = 0; i < d.length; i += 4) sum += d[i] + d[i + 1] + d[i + 2];
+    if (sum / (d.length / 4) / 3 < 6) problem = "화면이 새까매요";
+  }
+  if (!problem) { camHealth.blackSince = 0; camHealth.problem = ""; return; }
+  if (!camHealth.blackSince) camHealth.blackSince = now;
+  if (now - camHealth.blackSince > 2500) {
+    camHealth.problem = problem;
+    if (video.paused) video.play().catch(() => {});
+    if (!camHealth.warned) {
+      camHealth.warned = true;
+      toast("📷 카메라 " + problem + " — 오른쪽 아래에서 다른 카메라를 골라보세요", "#ff9f43");
+    }
+  }
+}
+
+function trackFrame(now) {
+  if (input.mode !== "camera") return;
+  checkCamera(now);
+  if (!handLandmarker || video.readyState < 2) { drawPreview(); return; }
+  if (video.currentTime !== lastVideoTime) {
+    lastVideoTime = video.currentTime;
+    const t = performance.now();
+    try {
+      processHands(handLandmarker.detectForVideo(video, t), t);
+    } catch (err) {
+      // GPU delegate can blow up on some machines — drop to CPU once instead of killing the game loop
+      console.error(err);
+      if (!usingCpu && visionLib) {
+        usingCpu = true;
+        const old = handLandmarker; handLandmarker = null;
+        try { old.close(); } catch {}
+        visionLib.HandLandmarker.createFromOptions(visionFiles, landmarkerOptions("CPU"))
+          .then((h) => { handLandmarker = h; toast("CPU 모드로 전환했어요 (조금 느릴 수 있어요)", "#9fd3ff"); })
+          .catch((e) => toast("😵 손 인식 실패: " + (e.message || e), "#ff4d5e"));
+      }
+    }
+  }
   drawPreview();
 }
 
@@ -432,6 +537,16 @@ function drawPreview() {
     pctx.stroke();
     pctx.fillStyle = "#ff4d5e";
     pctx.beginPath(); pctx.arc((1 - lm[8].x) * w, lm[8].y * h, 5, 0, Math.PI * 2); pctx.fill();
+  }
+  if (camHealth.problem) {
+    pctx.fillStyle = "rgba(0,0,0,0.6)"; pctx.fillRect(0, 0, w, h);
+    pctx.fillStyle = "#ff9f43"; pctx.font = "bold 18px sans-serif"; pctx.textAlign = "center"; pctx.textBaseline = "middle";
+    pctx.fillText("📷 카메라 " + camHealth.problem, w / 2, h / 2 - 34);
+    pctx.fillStyle = "#fff"; pctx.font = "14px sans-serif";
+    pctx.fillText("· 위 목록에서 다른 카메라 선택", w / 2, h / 2 - 6);
+    pctx.fillText("· 렌즈 가리개/다른 앱 사용 중인지 확인", w / 2, h / 2 + 16);
+    pctx.fillText("· 탭 새로고침 후 다시 시작", w / 2, h / 2 + 38);
+    pctx.textAlign = "left";
   }
   pctx.fillStyle = "rgba(0,0,0,0.55)";
   pctx.fillRect(0, h - 30, w, 30);
@@ -938,7 +1053,7 @@ function drawPaused() {
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(50, now - last); last = now;
-  trackFrame();
+  trackFrame(now);
   update(dt);
 
   ctx.save();
