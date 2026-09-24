@@ -95,7 +95,8 @@
     <div class="tip">
       팁: 손을 카메라 쪽이 아니라 <b>옆으로 비스듬히</b> 겨누면 인식이 훨씬 잘 돼요 (영상 속 자세처럼).<br>
       마우스 모드: 클릭 = 발사, R = 재장전, Space = 방패. 카메라 모드에서도 키보드 사용 가능.<br>
-      발사 감도: <b>[</b> / <b>]</b> 키로 조절 · P = 일시정지
+      발사 감도: <b>[</b> / <b>]</b> 키로 조절 · P = 일시정지<br>
+      📷 카메라가 안 켜지거나 까맣게 나오면 → <a href="check.html" style="color:#9fd3ff">카메라 진단하기</a>
     </div>
   </div>
 </div>
@@ -413,7 +414,7 @@ async function initCamera() {
     else if (name === "NotReadableError") why = "다른 앱(Zoom, 카톡, 다른 탭 등)이 카메라를 쓰고 있는 것 같아요. 끄고 다시 시도해주세요.";
     else if (name === "NotFoundError" || name === "OverconstrainedError") why = "카메라를 못 찾았어요. 연결을 확인해주세요.";
     else if (!window.isSecureContext) why = "파일을 직접 열면 카메라가 막혀요. go run . 으로 띄운 http://localhost:8080 으로 접속해주세요.";
-    statusEl.textContent = "😵 카메라/모델 준비 실패 (" + (err && err.message ? err.message : err) + ") — " + why + " 일단 마우스 모드로 놀 수 있어요!";
+    statusEl.textContent = "😵 카메라/모델 준비 실패 (" + (err && err.message ? err.message : err) + ") — " + why + " 일단 마우스 모드로 놀 수 있어요! 원인을 찾으려면 아래 '카메라 진단하기'를 눌러보세요.";
     btnCam.disabled = false; btnMouse.disabled = false;
   }
 }

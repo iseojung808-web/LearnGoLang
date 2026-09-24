@@ -14,7 +14,7 @@ import (
 	"net/http"
 )
 
-//go:embed index.html
+//go:embed index.html check.html
 var site embed.FS
 
 func main() {

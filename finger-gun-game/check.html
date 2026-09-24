@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>카메라 진단</title>
+<style>
+  :root { --bg: #0b0d17; --card: #151827; --text: #f4f1ea; --muted: #a9a6b8; --ok: #4de38a; --bad: #ff4d5e; --warn: #ffb347; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; padding: 16px; }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { margin: 8px 0 4px; }
+  p.sub { color: var(--muted); margin: 0 0 16px; }
+  button { font: inherit; font-weight: 700; font-size: 17px; border: none; border-radius: 12px; padding: 12px 20px; background: #ffcf3f; color: #1a1400; cursor: pointer; }
+  ol { list-style: none; padding: 0; margin: 16px 0; }
+  li { background: var(--card); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; gap: 10px; }
+  li .icon { font-size: 20px; width: 26px; flex: none; }
+  li b { display: block; }
+  li small { color: var(--muted); display: block; margin-top: 2px; line-height: 1.5; word-break: break-all; }
+  li.ok b { color: var(--ok); } li.bad b { color: var(--bad); } li.warn b { color: var(--warn); }
+  video { width: 100%; max-width: 360px; border-radius: 12px; background: #000; transform: scaleX(-1); display: block; margin-top: 8px; }
+  #summary { background: var(--card); border-left: 4px solid #ffcf3f; border-radius: 8px; padding: 12px 14px; line-height: 1.6; display: none; }
+  textarea { width: 100%; height: 140px; margin-top: 8px; background: #0f1120; color: var(--muted); border: 1px solid #333; border-radius: 8px; font-size: 12px; }
+  a { color: #9fd3ff; }
+</style>
+</head>
+<body>
+<main>
+  <h1>📷 카메라 진단실</h1>
+  <p class="sub">게임이 안 될 때 어디서 막히는지 하나씩 확인해요. 결과 화면을 캡처하거나 아래 텍스트를 복사해서 보내주세요.</p>
+  <button id="go">진단 시작</button>
+  <ol id="list"></ol>
+  <video id="v" playsinline muted autoplay></video>
+  <div id="summary"></div>
+  <textarea id="report" readonly style="display:none"></textarea>
+  <p><a href="./">← 게임으로 돌아가기</a></p>
+</main>
+<script>
+const list = document.getElementById("list");
+const video = document.getElementById("v");
+const lines = [];
+function row(state, title, detail = "") {
+  const li = document.createElement("li");
+  li.className = state;
+  li.innerHTML = `<span class="icon">${{ ok: "✅", bad: "❌", warn: "⚠️", info: "ℹ️" }[state]}</span><div><b></b><small></small></div>`;
+  li.querySelector("b").textContent = title;
+  li.querySelector("small").textContent = detail;
+  list.appendChild(li);
+  lines.push(`[${state}] ${title}${detail ? " — " + detail : ""}`);
+}
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("시간 초과")), ms))]);
+
+async function reachable(url) {
+  try { await withTimeout(fetch(url, { mode: "no-cors", cache: "no-store" }), 8000); return true; }
+  catch { return false; }
+}
+
+async function run() {
+  document.getElementById("go").disabled = true;
+  list.innerHTML = ""; lines.length = 0;
+  const problems = [];
+
+  row("info", "브라우저", navigator.userAgent);
+  row("info", "주소", location.href);
+
+  if (window.isSecureContext) row("ok", "보안 연결(localhost/https)");
+  else { row("bad", "보안 연결 아님", "카메라는 https 나 localhost 에서만 켜져요. go run . 으로 띄운 http://localhost:8080 으로 접속하세요."); problems.push("secure"); }
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    row("bad", "이 브라우저/주소에서는 카메라 기능 자체가 없어요", "크롬이나 엣지 최신 버전에서, localhost 주소로 열어보세요.");
+    problems.push("nomedia");
+  } else {
+    // permission state (not every browser supports this query)
+    try {
+      const perm = await navigator.permissions.query({ name: "camera" });
+      row(perm.state === "denied" ? "bad" : "info", "카메라 권한 상태: " + perm.state,
+        perm.state === "denied" ? "주소창 왼쪽 아이콘 → 카메라 → 허용. 아예 못 바꾸게 막혀 있으면 학교 관리자가 막아둔 거예요." : "");
+      if (perm.state === "denied") problems.push("denied");
+    } catch { /* Safari/Firefox may not support it */ }
+
+    let stream = null;
+    try {
+      stream = await withTimeout(navigator.mediaDevices.getUserMedia({ video: true, audio: false }), 15000);
+      row("ok", "카메라 켜짐", stream.getVideoTracks().map((t) => t.label).join(", "));
+    } catch (e) {
+      const why = {
+        NotAllowedError: "권한 거부. 팝업에서 '허용'을 눌렀는데도 이러면, 학교 관리자 정책으로 카메라가 막혀 있을 가능성이 커요.",
+        NotFoundError: "이 컴퓨터에 카메라가 연결돼 있지 않아요. (데스크톱이면 웹캠이 없을 수 있어요)",
+        NotReadableError: "카메라가 있지만 켤 수가 없어요. 다른 프로그램(줌, 수업용 프로그램, 다른 탭)이 쓰고 있거나 드라이버/보안 프로그램이 막고 있어요.",
+        OverconstrainedError: "카메라가 요청한 설정을 지원하지 않아요.",
+        SecurityError: "보안 정책으로 차단됐어요 (관리자 정책 가능성).",
+      }[e.name] || "알 수 없는 오류";
+      row("bad", "카메라 켜기 실패: " + e.name, (e.message || "") + " → " + why);
+      problems.push("gum:" + e.name);
+    }
+
+    try {
+      const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "videoinput");
+      row(devs.length ? "info" : "bad", `찾은 카메라 ${devs.length}개`, devs.map((d, i) => d.label || `카메라 ${i + 1} (이름 숨김)`).join(" / "));
+      if (!devs.length) problems.push("nocam");
+    } catch {}
+
+    if (stream) {
+      video.srcObject = stream;
+      try { await video.play(); } catch {}
+      await new Promise((r) => setTimeout(r, 2000));
+      const c = document.createElement("canvas"); c.width = 32; c.height = 24;
+      const cx = c.getContext("2d", { willReadFrequently: true });
+      let bright = 0;
+      try {
+        cx.drawImage(video, 0, 0, 32, 24);
+        const d = cx.getImageData(0, 0, 32, 24).data;
+        for (let i = 0; i < d.length; i += 4) bright += (d[i] + d[i + 1] + d[i + 2]) / 3;
+        bright /= d.length / 4;
+      } catch {}
+      if (!video.videoWidth) { row("bad", "카메라는 켜졌는데 영상이 안 들어와요", "드라이버/보안 프로그램 문제일 수 있어요."); problems.push("noframes"); }
+      else if (bright < 6) { row("bad", `영상이 새까매요 (밝기 ${bright.toFixed(1)}/255)`, "렌즈 가리개(노트북 위쪽 슬라이드)나 키보드의 카메라 끄기 키(F키 중 카메라 그림), 또는 관리 프로그램이 카메라를 가리고 있어요."); problems.push("black"); }
+      else row("ok", `영상 들어옴 ${video.videoWidth}×${video.videoHeight} (밝기 ${bright.toFixed(0)}/255)`, "아래 미리보기에 내 얼굴이 보이면 카메라는 정상!");
+    }
+  }
+
+  // Can the hand-tracking model be downloaded? School firewalls love blocking these.
+  const cdn = await reachable("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/package.json");
+  row(cdn ? "ok" : "bad", "손 인식 프로그램 서버 (cdn.jsdelivr.net) " + (cdn ? "접속됨" : "접속 안 됨"), cdn ? "" : "학교 네트워크가 막고 있을 수 있어요.");
+  if (!cdn) problems.push("cdn");
+  const model = await reachable("https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task");
+  row(model ? "ok" : "bad", "손 인식 모델 서버 (storage.googleapis.com) " + (model ? "접속됨" : "접속 안 됨"), model ? "" : "학교 네트워크가 막고 있을 수 있어요.");
+  if (!model) problems.push("model");
+
+  const gl = document.createElement("canvas").getContext("webgl2");
+  row(gl ? "ok" : "warn", gl ? "그래픽 가속(WebGL2) 사용 가능" : "그래픽 가속 없음", gl ? "" : "게임은 CPU 모드로 돌아가요. 조금 느릴 수 있어요.");
+
+  const sum = document.getElementById("summary");
+  sum.style.display = "block";
+  let verdict;
+  if (!problems.length) verdict = "🎉 전부 정상이에요! 게임 페이지를 새로고침(Ctrl+Shift+R)하고 다시 해보세요. 그래도 안 되면 이 결과를 보내주세요.";
+  else if (problems.some((p) => ["denied", "gum:NotAllowedError", "gum:SecurityError"].includes(p))) verdict = "🏫 카메라 권한이 막혀 있어요. 학교 컴퓨터는 관리자가 카메라를 꺼두는 경우가 많아요. 집 컴퓨터나 노트북에서 해보거나, 선생님께 카메라 허용을 부탁해야 해요.";
+  else if (problems.includes("nocam") || problems.includes("gum:NotFoundError")) verdict = "🙈 이 컴퓨터엔 카메라가 없어요. 웹캠을 꽂거나 카메라 있는 컴퓨터에서 해주세요. 그동안은 마우스 모드로!";
+  else if (problems.includes("black")) verdict = "🌑 카메라는 켜지는데 화면이 까매요. 렌즈 가리개, 카메라 끄기 키, 또는 학교 관리 프로그램을 확인해주세요.";
+  else if (problems.includes("gum:NotReadableError") || problems.includes("noframes")) verdict = "🔒 카메라를 다른 프로그램이 붙잡고 있어요. 줌/수업 프로그램/다른 탭을 끄고 다시 해보세요.";
+  else if (problems.includes("cdn") || problems.includes("model")) verdict = "🧱 카메라는 괜찮은데, 학교 네트워크가 손 인식 파일 다운로드를 막고 있어요. 휴대폰 핫스팟으로 연결하면 될 수도 있어요.";
+  else if (problems.includes("secure")) verdict = "🔐 주소가 localhost/https 가 아니라서 카메라가 막혔어요. go run . 후 http://localhost:8080 으로 접속하세요.";
+  else verdict = "🤔 뭔가 막혔어요. 아래 결과를 복사해서 보내주세요.";
+  sum.textContent = verdict;
+  lines.push("결론: " + verdict);
+
+  const rep = document.getElementById("report");
+  rep.style.display = "block"; rep.value = lines.join("\n");
+  document.getElementById("go").disabled = false;
+  document.getElementById("go").textContent = "다시 진단";
+}
+document.getElementById("go").addEventListener("click", run);
+</script>
+</body>
+</html>
