@@ -479,7 +479,7 @@ function checkCamera(now) {
     const d = probeCtx.getImageData(0, 0, 16, 12).data;
     let sum = 0;
     for (let i = 0; i < d.length; i += 4) sum += d[i] + d[i + 1] + d[i + 2];
-    if (sum / (d.length / 4) / 3 < 6) problem = "화면이 새까매요";
+    if (sum / (d.length / 4) / 3 < 25) problem = "화면이 새까매요";
   }
   if (!problem) { camHealth.blackSince = 0; camHealth.problem = ""; return; }
   if (!camHealth.blackSince) camHealth.blackSince = now;
@@ -488,7 +488,7 @@ function checkCamera(now) {
     if (video.paused) video.play().catch(() => {});
     if (!camHealth.warned) {
       camHealth.warned = true;
-      toast("📷 카메라 " + problem + " — 오른쪽 아래에서 다른 카메라를 골라보세요", "#ff9f43");
+      toast("📷 카메라 " + problem + " — 렌즈 가리개(화면 위 슬라이드)부터 확인해보세요!", "#ff9f43");
     }
   }
 }
@@ -545,7 +545,7 @@ function drawPreview() {
     pctx.fillText("📷 카메라 " + camHealth.problem, w / 2, h / 2 - 34);
     pctx.fillStyle = "#fff"; pctx.font = "14px sans-serif";
     pctx.fillText("· 위 목록에서 다른 카메라 선택", w / 2, h / 2 - 6);
-    pctx.fillText("· 렌즈 가리개/다른 앱 사용 중인지 확인", w / 2, h / 2 + 16);
+    pctx.fillText("· 카메라 옆 슬라이드 가리개/스티커 확인", w / 2, h / 2 + 16);
     pctx.fillText("· 탭 새로고침 후 다시 시작", w / 2, h / 2 + 38);
     pctx.textAlign = "left";
   }

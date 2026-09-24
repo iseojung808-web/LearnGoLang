@@ -114,7 +114,9 @@ async function run() {
         bright /= d.length / 4;
       } catch {}
       if (!video.videoWidth) { row("bad", "카메라는 켜졌는데 영상이 안 들어와요", "드라이버/보안 프로그램 문제일 수 있어요."); problems.push("noframes"); }
-      else if (bright < 6) { row("bad", `영상이 새까매요 (밝기 ${bright.toFixed(1)}/255)`, "렌즈 가리개(노트북 위쪽 슬라이드)나 키보드의 카메라 끄기 키(F키 중 카메라 그림), 또는 관리 프로그램이 카메라를 가리고 있어요."); problems.push("black"); }
+      else if (bright < 25) { row("bad", `영상이 새까매요 (밝기 ${bright.toFixed(1)}/255)`, bright >= 3
+        ? "센서는 살아 있는데 빛이 안 들어와요(노이즈만 보임) → 렌즈가 물리적으로 가려져 있어요. 화면 위 카메라 옆 슬라이드 가리개(Dell·Lenovo 등), 스티커/테이프를 확인하세요. 너무 어두운 방이어도 이래요."
+        : "완전 검은 화면 → 키보드의 카메라 끄기 키(F키 중 카메라 그림), 렌즈 가리개, 또는 관리 프로그램이 카메라를 막고 있어요."); problems.push("black"); }
       else row("ok", `영상 들어옴 ${video.videoWidth}×${video.videoHeight} (밝기 ${bright.toFixed(0)}/255)`, "아래 미리보기에 내 얼굴이 보이면 카메라는 정상!");
     }
   }
@@ -136,7 +138,7 @@ async function run() {
   if (!problems.length) verdict = "🎉 전부 정상이에요! 게임 페이지를 새로고침(Ctrl+Shift+R)하고 다시 해보세요. 그래도 안 되면 이 결과를 보내주세요.";
   else if (problems.some((p) => ["denied", "gum:NotAllowedError", "gum:SecurityError"].includes(p))) verdict = "🏫 카메라 권한이 막혀 있어요. 학교 컴퓨터는 관리자가 카메라를 꺼두는 경우가 많아요. 집 컴퓨터나 노트북에서 해보거나, 선생님께 카메라 허용을 부탁해야 해요.";
   else if (problems.includes("nocam") || problems.includes("gum:NotFoundError")) verdict = "🙈 이 컴퓨터엔 카메라가 없어요. 웹캠을 꽂거나 카메라 있는 컴퓨터에서 해주세요. 그동안은 마우스 모드로!";
-  else if (problems.includes("black")) verdict = "🌑 카메라는 켜지는데 화면이 까매요. 렌즈 가리개, 카메라 끄기 키, 또는 학교 관리 프로그램을 확인해주세요.";
+  else if (problems.includes("black")) verdict = "🌑 카메라는 켜지는데 화면이 까매요. 제일 흔한 범인은 화면 위 카메라 옆의 슬라이드 가리개예요! 그다음 스티커/테이프, 카메라 끄기 키, 방 조명 순으로 확인해주세요.";
   else if (problems.includes("gum:NotReadableError") || problems.includes("noframes")) verdict = "🔒 카메라를 다른 프로그램이 붙잡고 있어요. 줌/수업 프로그램/다른 탭을 끄고 다시 해보세요.";
   else if (problems.includes("cdn") || problems.includes("model")) verdict = "🧱 카메라는 괜찮은데, 학교 네트워크가 손 인식 파일 다운로드를 막고 있어요. 휴대폰 핫스팟으로 연결하면 될 수도 있어요.";
   else if (problems.includes("secure")) verdict = "🔐 주소가 localhost/https 가 아니라서 카메라가 막혔어요. go run . 후 http://localhost:8080 으로 접속하세요.";
