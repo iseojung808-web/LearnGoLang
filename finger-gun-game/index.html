@@ -25,12 +25,12 @@
   /* NOT display:none — browsers (Safari especially) stop decoding frames of hidden videos → black preview */
   #cam { position: fixed; left: 0; top: 0; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
   #camSelect {
-    position: fixed; right: 16px; bottom: 204px; width: 240px; z-index: 6; display: none;
+    position: fixed; right: 16px; top: 204px; width: 240px; z-index: 6; display: none;
     font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 8px;
     background: rgba(12,14,28,0.9); color: var(--text); border: 1px solid rgba(255,255,255,0.25);
   }
   #preview {
-    position: fixed; right: 16px; bottom: 16px; width: 240px; height: 180px;
+    position: fixed; right: 16px; top: 16px; width: 240px; height: 180px;
     border-radius: 12px; border: 2px solid rgba(255,255,255,0.25);
     background: #000; z-index: 5; display: none;
   }
@@ -73,8 +73,8 @@
   }
   .move .key { float: right; color: var(--muted); font-size: 12px; }
   @media (max-width: 600px) {
-    #preview { width: 144px; height: 108px; right: 8px; bottom: 8px; }
-    #camSelect { width: 144px; right: 8px; bottom: 122px; }
+    #preview { width: 144px; height: 108px; right: 8px; top: 8px; }
+    #camSelect { width: 144px; right: 8px; top: 122px; }
     h1 { font-size: 26px; }
     .card { padding: 18px; }
   }
@@ -94,7 +94,7 @@
     <div class="keys">
       <div><kbd>마우스</kbd> 조준 <span class="or">또는</span> <kbd>←↑↓→</kbd> <small>(Shift = 정밀)</small></div>
       <div><kbd>좌클릭</kbd> <span class="or">/</span> <kbd>F</kbd> 발사 <small>(누르고 있으면 연사)</small></div>
-      <div><kbd>A</kbd> <kbd>D</kbd> 좌우 이동</div>
+      <div><kbd>W</kbd> <kbd>S</kbd> 앞뒤 이동 · <kbd>A</kbd> <kbd>D</kbd> 좌우 이동</div>
       <div><kbd>R</kbd> 재장전 <small>(탄창 비면 자동)</small></div>
       <div><kbd>1</kbd>~<kbd>6</kbd> <span class="or">/</span> <kbd>Q</kbd> <kbd>E</kbd> <span class="or">/</span> <kbd>휠</kbd> 무기 교체</div>
       <div><kbd>G</kbd> <span class="or">/</span> <kbd>우클릭</kbd> 수류탄</div>
@@ -103,7 +103,7 @@
     </div>
 
     <div class="moves" id="weaponList"></div>
-    <p class="tip" style="margin-top:0">📦 필드에 떨어진 상자를 쏘면 탄약·수류탄·치킨이 나와요. 30초마다 보스 🧌 등장. 🐱 고양이는 쏘지 마세요.</p>
+    <p class="tip" style="margin-top:0">💀 머리를 맞히면 헤드샷 2배, 💦 젖은 좀비는 1.5배 아파해요. 📦 상자는 쏘거나 걸어가서 먹으면 탄약·수류탄·치킨이 나와요. 30초마다 보스 🧌 등장. 🐱 고양이는 쏘지 마세요.</p>
 
     <div class="btns">
       <button id="startMouse">⌨️ 게임 시작</button>
@@ -606,14 +606,14 @@ function drawPreview() {
 // ---------------------------------------------------------------------------
 // spread / blast are fractions of min(W, H) so the game feels the same on any screen
 const WEAPONS = [
-  { id: "pistol",  name: "권총",     icon: "🔫", mag: 12, reserve: Infinity, startReserve: Infinity, rate: 170, reload: 900,  dmg: 2,  shake: 8,  word: "탕!",    color: "#ffcf3f", desc: "기본템. 탄약 무한, 반동 적음" },
-  { id: "shotgun", name: "샷건",     icon: "💥", mag: 6,  reserve: 36,  startReserve: 12, rate: 650,  reload: 1500, dmg: 1,  pellets: 8, spread: 0.07, knock: 0.08, shake: 16, word: "쾅!", color: "#ff8a3d", desc: "8발 산탄. 가까이 온 놈에게 최고" },
-  { id: "smg",     name: "기관단총", icon: "⚡", mag: 30, reserve: 120, startReserve: 60, rate: 85,   reload: 1400, dmg: 1,  auto: true, spread: 0.01, bloom: 0.005, maxBloom: 0.055, shake: 4, word: "타타타", color: "#7dff9b", desc: "누르고 있으면 연사. 쏠수록 퍼짐" },
-  { id: "sniper",  name: "저격총",   icon: "🎯", mag: 5,  reserve: 20,  startReserve: 5,  rate: 1000, reload: 1800, dmg: 12, pierce: true, shake: 20, word: "퓽—", color: "#ff4d5e", desc: "한 방에 일렬 관통. 오우거도 한 방" },
-  { id: "rocket",  name: "로켓",     icon: "🚀", mag: 1,  reserve: 6,   startReserve: 2,  rate: 500,  reload: 2000, dmg: 8,  blast: 0.17, shake: 10, word: "슈웅", color: "#ffb347", desc: "범위 폭발. 떼거지 & 보스 전용" },
-  { id: "water",   name: "물총",     icon: "💦", mag: 60, reserve: Infinity, startReserve: Infinity, rate: 55, reload: 1000, dmg: 0, auto: true, slow: true, spread: 0.015, shake: 0, word: "쮸왁", color: "#7fd6ff", desc: "데미지 0. 대신 좀비가 느려짐 (샤워 중)" },
+  { id: "pistol",  name: "권총",     icon: "🔫", mag: 15, reserve: Infinity, startReserve: Infinity, rate: 140, reload: 800,  dmg: 3,  kick: 1,   shake: 8,  word: "탕!",    color: "#ffcf3f", desc: "기본템. 탄약 무한, 좀비 한 방" },
+  { id: "shotgun", name: "샷건",     icon: "💥", mag: 8,  reserve: 48,  startReserve: 24, rate: 520,  reload: 1300, dmg: 2,  pellets: 10, spread: 0.07, knock: 0.1, kick: 2.2, shake: 16, word: "쾅!", color: "#ff8a3d", desc: "10발 산탄 + 넉백. 가까운 놈 증발" },
+  { id: "smg",     name: "기관단총", icon: "⚡", mag: 40, reserve: 200, startReserve: 120, rate: 70,  reload: 1200, dmg: 2,  auto: true, spread: 0.01, bloom: 0.004, maxBloom: 0.045, kick: 0.5, shake: 4, word: "타타타", color: "#7dff9b", desc: "누르고 있으면 연사. 쏠수록 퍼짐" },
+  { id: "sniper",  name: "저격총",   icon: "🎯", mag: 6,  reserve: 30,  startReserve: 12, rate: 750,  reload: 1500, dmg: 30, pierce: true, kick: 2.5, shake: 20, word: "퓽—", color: "#ff4d5e", desc: "30 데미지 일렬 관통. 헤드샷이면 60" },
+  { id: "rocket",  name: "로켓",     icon: "🚀", mag: 2,  reserve: 10,  startReserve: 4,  rate: 450,  reload: 1700, dmg: 16, blast: 0.21, kick: 1.8, shake: 10, word: "슈웅", color: "#ffb347", desc: "2연발 범위 폭발. 떼거지 & 보스 전용" },
+  { id: "water",   name: "물총",     icon: "💦", mag: 60, reserve: Infinity, startReserve: Infinity, rate: 55, reload: 1000, dmg: 0, auto: true, slow: true, spread: 0.015, kick: 0.2, shake: 0, word: "쮸왁", color: "#7fd6ff", desc: "데미지 0. 젖은 좀비는 느려지고 1.5배 아파함" },
 ];
-const GRENADE = { dmg: 10, blast: 0.2, max: 5 };
+const GRENADE = { dmg: 20, blast: 0.24, max: 6 };
 
 function weapon() { return WEAPONS[game.weapon]; }
 function ammo() { return game.arsenal[game.weapon]; }
@@ -629,12 +629,13 @@ const game = {
   t: 0,
   camX: 0,         // world scroll (0..WORLD_SCALE-1 screens)
   hp: 100, shield: 100,
-  weapon: 0, arsenal: freshArsenal(), grenades: 2,
+  weapon: 0, arsenal: freshArsenal(), grenades: 3,
   reloading: 0, reloadTotal: 1,  // ms remaining / total
   lastShot: -1e9, bloom: 0,
   score: 0, combo: 0, best: parseInt(safeGet("fg_best", "0"), 10) || 0,
   kills: 0, shots: 0, hits: 0, catsShot: 0, weaponShots: WEAPONS.map(() => 0),
-  enemies: [], particles: [], texts: [], holes: [], projectiles: [], blasts: [],
+  enemies: [], particles: [], texts: [], holes: [], projectiles: [], blasts: [], tracers: [],
+  walkPhase: 0, moving: false,
   spawnTimer: 0, crateTimer: 0, shake: 0, flash: 0, hurtFlash: 0, recoil: 0, swapFlash: 0,
   wave: 1,
   lastEmptyHint: 0,
@@ -664,10 +665,11 @@ function restart() {
   Object.assign(game, {
     state: "play", paused: false, t: 0, camX: (WORLD_SCALE - 1) / 2,
     hp: 100, shield: 100,
-    weapon: 0, arsenal: freshArsenal(), grenades: 2,
+    weapon: 0, arsenal: freshArsenal(), grenades: 3,
     reloading: 0, reloadTotal: 1, lastShot: -1e9, bloom: 0,
     score: 0, combo: 0, kills: 0, shots: 0, hits: 0, catsShot: 0, weaponShots: WEAPONS.map(() => 0),
-    enemies: [], particles: [], texts: [], holes: [], projectiles: [], blasts: [],
+    enemies: [], particles: [], texts: [], holes: [], projectiles: [], blasts: [], tracers: [],
+    walkPhase: 0, moving: false,
     spawnTimer: 800, crateTimer: 6000, shake: 0, flash: 0, hurtFlash: 0, recoil: 0, swapFlash: 0, wave: 1,
   });
   toast("좀비들이 몰려온다! 🧟🧟🧟", "#ffcf3f");
@@ -693,7 +695,7 @@ function spawnEnemy(forceType) {
   };
   if (e.flyer) { e.dir = Math.random() < 0.5 ? 1 : -1; e.wx = e.dir > 0 ? -0.1 : WORLD_SCALE + 0.1; e.z = rand(0.25, 0.45); e.fy = rand(0.12, 0.3); sfx.ufo(); }
   if (e.pickup) { e.z = rand(0.2, 0.5); e.speedMul = 1; e.lifeLeft = 10000; }
-  if (e.boss) { e.hp = e.maxHp = T.hp + 15 * (game.wave - 2); e.wx = game.camX + 0.5; }
+  if (e.boss) { e.hp = e.maxHp = 90 + 35 * (game.wave - 2); e.wx = game.camX + 0.5; }
   game.enemies.push(e);
   return e;
 }
@@ -776,15 +778,18 @@ function fire() {
   const px = aim.x * W, py = aim.y * H, S = Math.min(W, H);
 
   if (w.blast) {
+    onShotFx(w, []);
     launch("rocket", px, py, 260, w.dmg, w.blast);
   } else {
+    const shotPoints = [];
     let anyHit = false;
     const pellets = w.pellets || 1;
     const spread = (w.spread || 0) + (w.bloom ? game.bloom : 0);
     for (let i = 0; i < pellets; i++) {
       let x = px, y = py;
       if (spread) { const ang = rand(0, Math.PI * 2), r = Math.sqrt(Math.random()) * spread * S; x += Math.cos(ang) * r; y += Math.sin(ang) * r; }
-      let hits = enemiesAt(x, y, pellets > 1 ? 6 : 14);
+      shotPoints.push({ x, y });
+      let hits = enemiesAt(x, y, pellets > 1 ? 8 : 18);
       if (w.slow) hits = hits.filter((e) => !e.pickup);   // you can't open a crate by watering it
       if (!hits.length) {
         if (w.slow) burst(x, y, "#7fd6ff", 3, 2);
@@ -792,7 +797,10 @@ function fire() {
         continue;
       }
       anyHit = true;
-      for (const e of (w.pierce ? hits : [hits[0]])) damage(e, w.dmg, { slow: w.slow, knock: w.knock });
+      // headshot = the top part of whoever got hit first
+      const first = project(hits[0]);
+      const head = !hits[0].pickup && !hits[0].innocent && y < first.y - first.r * 0.3;
+      for (const e of (w.pierce ? hits : [hits[0]])) damage(e, w.dmg, { slow: w.slow, knock: w.knock, head, quiet: pellets > 1 });
       if (w.pierce && hits.length >= 2) floatText(px, py - 60, `관통 x${hits.length}! 🎯`, "#ff4d5e", 26);
     }
     if (anyHit && !w.slow) game.hits++;
@@ -801,6 +809,7 @@ function fire() {
       if (Math.random() < 0.3) floatText(px, py - 20, pick(QUIPS_MISS), "#aaa", 16);
     }
     if (w.bloom) game.bloom = Math.min(w.maxBloom, game.bloom + w.bloom);
+    onShotFx(w, shotPoints);
   }
   if (a.mag === 0 && a.reserve > 0) setTimeout(startReload, 120); // auto-reload: fewer keys to remember
   return true;
@@ -816,7 +825,9 @@ function throwGrenade() {
 
 // Rockets and grenades fly to a world position, then explode
 function launch(kind, sx, sy, dur, dmg, blast) {
-  game.projectiles.push({ kind, wx: sx / W + game.camX, sy, fromX: W / 2, fromY: H + 20, t: 0, dur, dmg, blast, fromCam: game.camX });
+  let fromX = W * 0.3, fromY = H + 20;
+  if (kind === "rocket") { const m = gunToScreen(gunPose(), GUN_SHAPES.rocket.muzzle[0], GUN_SHAPES.rocket.muzzle[1]); fromX = m.x; fromY = m.y; }
+  game.projectiles.push({ kind, wx: sx / W + game.camX, sy, fromX, fromY, t: 0, dur, dmg, blast });
 }
 function explode(x, y, radiusFrac, dmg) {
   const R = radiusFrac * Math.min(W, H);
@@ -857,6 +868,10 @@ function damage(e, dmg, opts = {}) {
     return true;
   }
 
+  if (opts.head) dmg *= 2;
+  const soaked = e.slowUntil > game.t;
+  if (soaked) dmg = Math.round(dmg * 1.5);
+  if (opts.head && !opts.quiet) floatText(p.x, p.y - p.r * 1.2, "헤드샷! 💀", "#ff4d5e", 22);
   e.hp -= dmg;
   if (e.hp <= 0) {
     e.dead = true; game.kills++; game.combo++;
@@ -870,7 +885,7 @@ function damage(e, dmg, opts = {}) {
     if (game.combo > 0 && game.combo % 5 === 0) toast(`🔥 ${game.combo} 콤보! 점수 x${mult}`, "#ff6b3d");
   } else {
     sfx.hit(); burst(p.x, p.y, "#ff6b6b", 8, 4);
-    if (dmg > 0) floatText(p.x + rand(-12, 12), p.y - p.r * 0.5, `-${dmg}`, "#ff9f9f", 16);
+    if (dmg > 0) floatText(p.x + rand(-12, 12), p.y - p.r * 0.5, `-${dmg}${soaked ? " 💧" : ""}`, soaked ? "#7fd6ff" : "#ff9f9f", 16);
     if (!e.boss) e.z = Math.max(0.05, e.z - (opts.knock || 0.03)); // knockback
   }
   return true;
@@ -893,7 +908,7 @@ function givePickup(p) {
   // ammo for a random "real" weapon (pistol & water gun are infinite anyway)
   const idx = 1 + Math.floor(Math.random() * 4);
   const w = WEAPONS[idx], a = game.arsenal[idx];
-  const gain = { shotgun: 12, smg: 60, sniper: 5, rocket: 2 }[w.id];
+  const gain = { shotgun: 16, smg: 80, sniper: 6, rocket: 3 }[w.id];
   a.reserve = Math.min(w.reserve, a.reserve + gain);
   floatText(p.x, p.y - p.r, `${w.icon} ${w.name} 탄약 +${gain}`, w.color, 24);
 }
@@ -950,6 +965,25 @@ function update(dt) {
     else if (input.aimX > 1 - edge) pan = (input.aimX - (1 - edge)) / edge;
   }
   game.camX = clamp(game.camX + pan * 1.1 * dt / 1000, 0, WORLD_SCALE - 1);
+
+  // W/S walks through the graveyard: everything on the ground slides toward / away from you.
+  // Backing off is slower than most zombies, so it buys time but can't kite forever.
+  const walk = (held("KeyW") ? 1 : 0) - (held("KeyS") ? 1 : 0);
+  if (walk) {
+    const dz = (walk > 0 ? 0.11 : -0.055) * dt / 1000;
+    for (const e of game.enemies) {
+      if (e.dead || e.flyer) continue;
+      e.z = Math.max(0.02, e.z + dz);
+      if (e.pickup && e.z > 0.93) { e.dead = true; givePickup(project(e)); }  // walk over a crate to grab it
+    }
+    for (const gr of graves) {
+      gr.z += dz;
+      if (gr.z > 1.05) { gr.z -= 0.95; gr.x = rand(0, WORLD_SCALE); }
+      if (gr.z < 0.1) { gr.z += 0.9; gr.x = rand(0, WORLD_SCALE); }
+    }
+  }
+  game.moving = !!(walk || pan);
+  if (game.moving) game.walkPhase += dt * (walk < 0 ? 0.008 : 0.012);
   const ax = (held("ArrowRight") ? 1 : 0) - (held("ArrowLeft") ? 1 : 0);
   const ay = (held("ArrowDown") ? 1 : 0) - (held("ArrowUp") ? 1 : 0);
   if ((ax || ay) && input.mode === "mouse") {
@@ -967,7 +1001,7 @@ function update(dt) {
   game.crateTimer -= dt;
   if (game.crateTimer <= 0) {
     spawnEnemy("crate");
-    game.crateTimer = rand(9000, 14000);
+    game.crateTimer = rand(7000, 10000);
   }
 
   for (const e of game.enemies) {
@@ -983,7 +1017,7 @@ function update(dt) {
       if (e.lifeLeft <= 0) e.dead = true;
       continue;
     }
-    const slow = e.slowUntil > game.t ? 0.35 : 1;
+    const slow = e.slowUntil > game.t ? 0.3 : 1;
     e.z += e.speed * e.speedMul * slow * dt / 1000;
     if (e.z >= 1) {
       e.dead = true;
@@ -1011,6 +1045,8 @@ function update(dt) {
   }
   game.projectiles = game.projectiles.filter((pr) => !pr.done);
   for (const b of game.blasts) b.life -= dt;
+  for (const t of game.tracers) t.life -= dt;
+  game.tracers = game.tracers.filter((t) => t.life > 0);
   game.blasts = game.blasts.filter((b) => b.life > 0);
 
   game.enemies = game.enemies.filter((e) => !e.dead);
@@ -1036,11 +1072,196 @@ function gameOver() {
 }
 
 // ---------------------------------------------------------------------------
+// First-person gun (the "viewmodel"): recoil, muzzle flash, reload & swap motions
+// ---------------------------------------------------------------------------
+// Each gun is drawn in its own local space: +x runs along the barrel, +y points down (grip side).
+// `muzzle` and `eject` are local points the effects spawn from.
+const GUN_SHAPES = {
+  pistol:  { muzzle: [150, -7],  eject: [70, -18],  grip: [34, 40],  mag: [20, 38, 26, 44] },
+  shotgun: { muzzle: [272, -9],  eject: [55, -16],  grip: [26, 30],  mag: null },
+  smg:     { muzzle: [205, -3],  eject: [95, -16],  grip: [40, 36],  mag: [78, 14, 24, 62] },
+  sniper:  { muzzle: [332, -3],  eject: [95, -14],  grip: [40, 34],  mag: [52, 10, 30, 30] },
+  rocket:  { muzzle: [262, 0],   eject: null,       grip: [72, 44],  mag: null },
+  water:   { muzzle: [172, -1],  eject: null,       grip: [40, 38],  mag: null },
+};
+
+function gunPose() {
+  const w = weapon();
+  const S = Math.min(W, H) / 720 * 1.55;
+  const r = game.reloading > 0 ? 1 - game.reloading / game.reloadTotal : 0;
+  const dip = game.reloading > 0 ? Math.sin(Math.PI * Math.min(1, r * 1.1)) : 0;
+  const kick = game.recoil * (w.kick || 1);
+  const bobX = Math.sin(game.walkPhase) * 10 * S, bobY = Math.abs(Math.cos(game.walkPhase)) * 12 * S;
+  const ax = W * 0.8 + bobX, ay = H * 0.97 + bobY;
+  let ang = Math.atan2(input.aimY * H - ay, input.aimX * W - ax);
+  ang = clamp(ang, -Math.PI + 0.25, -0.35);
+  ang += kick * 0.16;          // muzzle climb
+  ang += dip * 0.3;            // tip the gun up and toward you to look at the magazine
+  const back = kick * 30 * S;  // slam back along the barrel
+  return {
+    ang, S, r, dip,
+    ox: ax - Math.cos(ang) * back - dip * 60 * S,
+    oy: ay - Math.sin(ang) * back - dip * 25 * S + game.swapFlash * 260 * S,
+  };
+}
+// local gun point → screen point (matches the transform in drawGun)
+function gunToScreen(P, lx, ly) {
+  const c = Math.cos(P.ang), s = Math.sin(P.ang);
+  ly = -ly;
+  return { x: P.ox + (lx * c - ly * s) * P.S, y: P.oy + (lx * s + ly * c) * P.S };
+}
+
+function onShotFx(w, targets) {
+  const P = gunPose(), shape = GUN_SHAPES[w.id];
+  const m = gunToScreen(P, shape.muzzle[0], shape.muzzle[1]);
+  if (w.slow) {
+    for (const t of targets) game.tracers.push({ x1: m.x, y1: m.y, x2: t.x, y2: t.y, life: 90, max: 90, color: "rgba(127,214,255,0.8)", width: 5 });
+    return;
+  }
+  if (!w.blast) {
+    for (const t of targets) game.tracers.push({ x1: m.x, y1: m.y, x2: t.x, y2: t.y, life: 70, max: 70, color: "rgba(255,230,150,0.9)", width: w.id === "sniper" ? 4 : 2 });
+  }
+  if (shape.eject) {
+    const e = gunToScreen(P, shape.eject[0], shape.eject[1]);
+    game.particles.push({ x: e.x, y: e.y, vx: rand(2, 5), vy: rand(-8, -5), life: 800, max: 800, color: w.id === "shotgun" ? "#d33" : "#e8b84a", r: w.id === "shotgun" ? 5 : 3.5 });
+  }
+}
+
+function drawGun() {
+  const w = weapon(), shape = GUN_SHAPES[w.id], P = gunPose();
+  const loaded = ammo().mag > 0 && game.reloading <= 0;
+  // magazine: drops out, then a fresh one slides back in
+  let magOff = 0, magAlpha = 1;
+  if (game.reloading > 0) {
+    if (P.r < 0.2) magOff = 0;
+    else if (P.r < 0.5) { magOff = (P.r - 0.2) / 0.3 * 140; magAlpha = 1 - (P.r - 0.2) / 0.3; }
+    else if (P.r < 0.8) { magOff = (1 - (P.r - 0.5) / 0.3) * 90; magAlpha = 1; }
+  }
+  // pump / bolt cycling right after a shot, and while reloading a shotgun
+  const cycle = game.recoil > 0.05 && game.recoil < 0.8 ? Math.sin((0.8 - game.recoil) / 0.75 * Math.PI) : 0;
+  const pump = (w.id === "shotgun" && game.reloading > 0) ? Math.abs(Math.sin(P.r * Math.PI * 4)) : cycle;
+
+  ctx.save();
+  ctx.translate(P.ox, P.oy); ctx.rotate(P.ang); ctx.scale(P.S, -P.S);
+  ctx.lineJoin = "round";
+  const metal = "#2d313c", dark = "#17191f", hi = "#4b5262", wood = "#8a5a2b", skin = "#e9b995", sleeve = "#2a3550";
+  const rect = (x, y, w_, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w_, h); };
+  const poly = (pts, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(pts[0], pts[1]); for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]); ctx.closePath(); ctx.fill(); };
+
+  // arm + sleeve (behind the gun)
+  const [gx, gy] = shape.grip;
+  ctx.strokeStyle = sleeve; ctx.lineWidth = 58; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(gx - 10, gy + 40); ctx.lineTo(gx - 170, gy + 300); ctx.stroke();
+
+  // magazine (drawn before the body so it slides "into" it)
+  if (shape.mag) {
+    const [mx, my, mw, mh] = shape.mag;
+    ctx.globalAlpha = magAlpha;
+    rect(mx, my + magOff, mw, mh, dark); rect(mx + 3, my + magOff + mh - 8, mw - 6, 6, hi);
+    ctx.globalAlpha = 1;
+  }
+
+  if (w.id === "pistol") {
+    poly([14, 8, 58, 8, 50, 84, 12, 84], dark);               // grip
+    rect(10, 2, 118, 12, metal);                              // frame
+    rect(10 - cycle * 22, -20, 142, 22, hi);                   // slide (racks back on shot)
+    rect(18 - cycle * 22, -18, 40, 4, metal);
+    ctx.strokeStyle = metal; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(66, 20, 11, 0, Math.PI); ctx.stroke(); // trigger guard
+  } else if (w.id === "shotgun") {
+    poly([-70, -6, 12, -12, 12, 22, -70, 38], wood);           // stock
+    rect(10, -18, 72, 32, metal);                             // receiver
+    rect(80, -16, 196, 11, dark);                             // barrel
+    rect(80, -3, 170, 9, metal);                              // tube
+    rect(140 - pump * 34, -7, 64, 18, wood);                   // pump
+    for (let i = 0; i < 3; i++) rect(146 - pump * 34 + i * 18, -5, 3, 14, "#5e3d1d");
+    if (game.reloading > 0 && P.r > 0.15 && P.r < 0.9) {       // a shell going in
+      ctx.fillStyle = "#d33"; ctx.fillRect(60, 18 + Math.abs(Math.sin(P.r * Math.PI * 4)) * 30, 22, 11);
+    }
+  } else if (w.id === "smg") {
+    rect(-56, -10, 60, 8, metal); rect(-60, -14, 10, 26, metal); // wire stock
+    poly([28, 12, 58, 12, 52, 66, 24, 66], dark);
+    rect(0, -18, 156, 32, metal);
+    rect(10 - cycle * 16, -18, 60, 6, hi);                     // bolt
+    rect(154, -9, 54, 11, dark);
+    rect(172, -13, 10, 6, dark);
+  } else if (w.id === "sniper") {
+    poly([-80, -8, 20, -10, 20, 18, -80, 30], "#3d4a33");      // stock
+    poly([28, 10, 58, 10, 52, 62, 24, 62], "#3d4a33");
+    rect(16, -14, 96, 26, metal);
+    rect(110, -8, 226, 9, dark);
+    rect(318, -10, 18, 13, metal);                            // muzzle brake
+    rect(30, -46, 112, 20, dark);                             // scope
+    rect(24, -49, 14, 26, metal); rect(136, -51, 16, 30, metal);
+    ctx.fillStyle = "#6cf"; ctx.beginPath(); ctx.arc(152, -36, 7, 0, Math.PI * 2); ctx.fill();
+    const bolt = game.reloading > 0 ? Math.sin(P.r * Math.PI) : cycle;
+    rect(92 - bolt * 26, -24, 8, 18, hi);                     // bolt handle
+    ctx.fillStyle = hi; ctx.beginPath(); ctx.arc(96 - bolt * 26, -26, 7, 0, Math.PI * 2); ctx.fill();
+  } else if (w.id === "rocket") {
+    poly([60, 18, 92, 18, 86, 76, 54, 76], dark);
+    rect(-50, -26, 312, 48, "#4b5d3a");
+    rect(-58, -32, 18, 60, "#3a4a2c"); rect(250, -30, 16, 56, "#3a4a2c");
+    rect(40, -26, 8, 48, "#3a4a2c"); rect(160, -26, 8, 48, "#3a4a2c");
+    rect(110, -42, 40, 16, dark);                             // sight
+    const slide = game.reloading > 0 ? (P.r < 0.5 ? 1 : 1 - (P.r - 0.5) / 0.5) * 120 : 0;
+    if (loaded || (game.reloading > 0 && P.r > 0.5)) {        // warhead poking out of the tube
+      rect(248 + slide, -18, 20, 36, "#666");
+      poly([268 + slide, -18, 300 + slide, 0, 268 + slide, 18], "#c33");
+    }
+  } else if (w.id === "water") {
+    poly([30, 10, 64, 10, 58, 66, 26, 66], "#2ecc71");
+    ctx.fillStyle = "#ff8c1a"; ctx.beginPath(); ctx.roundRect(-10, -18, 146, 34, 14); ctx.fill();
+    rect(134, -7, 40, 12, "#ffd21a");
+    // tank with sloshing water
+    ctx.fillStyle = "rgba(160,220,255,0.35)"; ctx.beginPath(); ctx.arc(46, -48, 30, 0, Math.PI * 2); ctx.fill();
+    const lvl = ammo().mag / w.mag;
+    ctx.save(); ctx.beginPath(); ctx.arc(46, -48, 28, 0, Math.PI * 2); ctx.clip();
+    ctx.fillStyle = "#3aa7ff"; ctx.fillRect(10, -48 + 28 - 56 * lvl + Math.sin(game.t / 120) * 3, 80, 80);
+    ctx.restore();
+  }
+
+  // hand wrapped around the grip
+  ctx.fillStyle = skin;
+  ctx.beginPath(); ctx.ellipse(gx, gy + 6, 26, 34, -0.25, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(gx + 20, gy - 16, 16, 8, 0, 0, Math.PI * 2); ctx.fill(); // thumb
+  ctx.strokeStyle = "rgba(0,0,0,0.18)"; ctx.lineWidth = 2;
+  for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(gx + 8, gy - 4 + i * 12); ctx.lineTo(gx + 24, gy - 2 + i * 12); ctx.stroke(); }
+
+  // muzzle flash
+  if (game.flash > 0.25 && !w.slow) {
+    const [mx, my] = shape.muzzle, f = game.flash, big = w.id === "shotgun" || w.id === "rocket" || w.id === "sniper" ? 1.6 : 1;
+    ctx.fillStyle = `rgba(255,220,120,${f})`;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = i / 10 * Math.PI * 2, rr = (i % 2 ? 14 : 44) * f * big;
+      ctx.lineTo(mx + 18 * big + Math.cos(a) * rr * (i % 4 === 0 ? 1.6 : 1), my + Math.sin(a) * rr * 0.6);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = `rgba(255,255,255,${f})`; ctx.beginPath(); ctx.arc(mx + 14 * big, my, 10 * f * big, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  // water gun stream sparkle
+  if (w.slow && game.flash > 0.3) {
+    const m = gunToScreen(P, shape.muzzle[0], shape.muzzle[1]);
+    game.particles.push({ x: m.x, y: m.y, vx: rand(-2, 0), vy: rand(-3, -1), life: 350, max: 350, color: "#7fd6ff", r: rand(2, 4) });
+  }
+}
+
+function drawTracers() {
+  for (const t of game.tracers) {
+    ctx.globalAlpha = clamp(t.life / t.max, 0, 1);
+    ctx.strokeStyle = t.color; ctx.lineWidth = t.width; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(t.x1, t.y1); ctx.lineTo(t.x2, t.y2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ---------------------------------------------------------------------------
 // Render
 // ---------------------------------------------------------------------------
 const stars = Array.from({ length: 90 }, () => ({ x: Math.random() * WORLD_SCALE, y: Math.random() * 0.4, r: Math.random() * 1.6 + 0.3 }));
 const buildings = Array.from({ length: 26 }, (_, i) => ({ x: i / 26 * WORLD_SCALE * 1.05, w: rand(0.04, 0.08), h: rand(0.06, 0.2) }));
-const graves = Array.from({ length: 14 }, () => ({ x: rand(0, WORLD_SCALE), z: rand(0.15, 0.7) }));
+const graves = Array.from({ length: 22 }, () => ({ x: rand(0, WORLD_SCALE), z: rand(0.12, 0.95) }));
 
 function drawWorld() {
   // sky
@@ -1075,7 +1296,8 @@ function drawWorld() {
   const fg = ctx.createLinearGradient(0, H * 0.36, 0, H * 0.55);
   fg.addColorStop(0, "rgba(160,140,200,0)"); fg.addColorStop(0.5, "rgba(160,140,200,0.18)"); fg.addColorStop(1, "rgba(160,140,200,0)");
   ctx.fillStyle = fg; ctx.fillRect(0, H * 0.36, W, H * 0.2);
-  // graves
+  // graves (far first)
+  graves.sort((a, b) => a.z - b.z);
   for (const gr of graves) {
     const p = project({ wx: gr.x, z: gr.z, size: 0.9 });
     ctx.fillStyle = "#4a4e5a";
@@ -1298,9 +1520,9 @@ function drawHud() {
 }
 function drawWeaponBar() {
   const n = WEAPONS.length;
-  const slot = Math.min(76, (W - 40) / (n + 1.3));
+  const slot = Math.min(66, (W * 0.55 - 40) / n);
   const gap = 6, total = n * slot + (n - 1) * gap;
-  const x0 = (W - total) / 2, y0 = H - slot - 14;
+  const x0 = 16, y0 = H - slot - 14;
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   WEAPONS.forEach((w, i) => {
     const a = game.arsenal[i];
@@ -1337,20 +1559,20 @@ function drawWeaponBar() {
     : a.mag === 0 && a.reserve > 0 ? `${w.icon} ${w.name} — ${reloadKey} 로 재장전!`
     : a.mag === 0 ? `${w.icon} ${w.name} — 탄약 없음 📦`
     : `${w.icon} ${w.name}`;
-  ctx.strokeText(label, W / 2, y0 - 22 - lift); ctx.fillText(label, W / 2, y0 - 22 - lift);
+  ctx.textAlign = "left";
+  ctx.strokeText(label, x0, y0 - 18 - lift); ctx.fillText(label, x0, y0 - 18 - lift);
   if (game.swapFlash > 0.3) {
     ctx.globalAlpha = clamp((game.swapFlash - 0.3) * 1.6, 0, 1);
     ctx.font = "14px sans-serif"; ctx.fillStyle = "#ddd";
-    ctx.fillText(w.desc, W / 2, y0 - 46 - lift);
+    ctx.fillText(w.desc, x0, y0 - 44 - lift);
     ctx.globalAlpha = 1;
   }
 
-  // grenades (bottom-left)
-  ctx.textAlign = "left";
+  // grenades, above the weapon bar
   ctx.font = "bold 20px sans-serif"; ctx.fillStyle = "#fff";
-  ctx.fillText(`💣 x${game.grenades}`, 18, H - 34);
+  ctx.fillText(`💣 x${game.grenades}`, x0, y0 - 74);
   ctx.font = "12px sans-serif"; ctx.fillStyle = "#a9a6b8";
-  ctx.fillText(input.mode === "camera" ? "G 키" : "G / 우클릭", 18, H - 14);
+  ctx.fillText(input.mode === "camera" ? "G 키" : "G / 우클릭", x0 + 70, y0 - 74);
 }
 
 function bar(x, y, w, h, frac, color, icon) {
@@ -1414,6 +1636,8 @@ function frame(now) {
   drawEnemies();
   drawProjectiles();
   drawFx();
+  drawTracers();
+  if (game.state === "play") drawGun();
   ctx.restore();
   if (game.state !== "menu") drawHud();
   if (game.state === "over") drawGameOver();
